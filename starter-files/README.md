@@ -7,13 +7,18 @@
 - `data/gi01sumo_nsif_ctd.nc`, `data/gi01sumo_nsif_dosta.nc`: real
   [OOI](https://oceanobservatories.org/) data from the **GI01SUMO** mooring
   (**G**lobal **I**rminger Sea Array, **Su**rface **Mo**oring) **NSIF** (**N**ear-**S**urface **I**nstrument
-  **F**rame) for a single year-long deployment. The datasets have had most of their extraneous parameters removed to cut down on dataset size, but they are still failry hefty files. They contain actual, measured, burst-sampled instrument data with genuine gaps.
+  **F**rame) for a single year-long deployment. The datasets have had most of their extraneous parameters removed to cut down on dataset size, but they are still fairly hefty files. They contain actual, measured, burst-sampled instrument data with genuine gaps.
 
 **Dependencies:** `xarray`, `netCDF4`, `pandas`, `numpy`, `matplotlib`.
-Block 3 covers setting these up properly in a virtual environment with a
-pinned dependency file. That said, learners should have the following packages installed: `pip install xarray netCDF4 pandas numpy
-matplotlib jupyter`. This workshop is written for a notebook-first audience, not a
-script/IDE workflow.
+Block 3 covers setting these up properly as a [uv](https://docs.astral.sh/uv/)
+project with a lock file. Until then, run this from this folder to start
+JupyterLab with everything available (see `learners/setup.md`):
+
+```bash
+uv run --no-project --with jupyterlab --with xarray --with netCDF4 --with pandas --with numpy --with matplotlib jupyter lab
+```
+This workshop is assumes that learners are, and principally work with, a Jupyter Notebooks-type workflow.
+Knowledge or use of an IDE is not necessary, but the whole lesson can be done via scripts and command line.
 
 ## A note for instructors
 
