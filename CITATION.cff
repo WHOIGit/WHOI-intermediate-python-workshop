@@ -13,8 +13,9 @@ message: >-
   training material.
 type: dataset
 authors:
-  - given-names: FIXME
-    family-names: FIXME
+  - given-names: Andrew
+    family-names: Reed
+    orcid: 0000-0002-6355-0913
 abstract: >-
   A two-session intermediate Python workshop for scientists and technicians
   who are comfortable writing basic scripts. Covers writing reusable
