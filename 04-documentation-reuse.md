@@ -1,0 +1,348 @@
+---
+title: "Documentation and Reuse"
+teaching: 90
+exercises: 50
+---
+
+:::::::::::::::::::::::::::::::::::::: questions
+
+- What does a README need to contain to actually be useful?
+- How do docstrings work together across a whole project, not just one function?
+- How do I extend this package for new work without breaking what already works?
+
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+::::::::::::::::::::::::::::::::::::: objectives
+
+- Write a README that lets a new user install and run the project
+- Audit and complete docstrings and type hints across a small project
+- Extend the package to support a new variable without editing existing functions
+
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+## Writing a README
+
+A README's job is to let someone who isn't you install the project
+and run the code successfully, without opening an issue or emailing you
+first. For `mooring_tools`, that means including the following: 
+what it does, how to install it, an example, and where the data comes from.
+
+::::::::::::::::::::::::::::::::::::: challenge
+
+## Challenge 1: Draft the README
+
+Write `README.md` for `mooring-tools`, covering: what the package
+does, install instructions (using `uv sync`), and a usage example a new user could
+actually run against `data/gi01sumo_nsif_ctd.nc`.
+
+:::::::::::::::::::::::: solution
+
+````markdown
+# mooring tools
+
+Burst-statistics, plotting, and merging utilities for OOI CTD/DOSTA
+data (Global Irminger Sea Array, near-surface instrument frame).
+
+## What this does
+
+Many sensors on OOI moorings sample in short bursts. This
+package takes raw CTD (temperature, salinity, pressure, density) and DOSTA
+(dissolved oxygen) records and:
+
+- computes robust burst-median statistics (median and median absolute
+  deviation) for each variable
+- fills gaps in the burst-median series with a linear-trend and harmonic fit
+- plots raw vs. burst-median data, and observed vs. modeled series
+- merges CTD and DOSTA into one annotated, saveable netCDF dataset, flagging
+  which values are observed vs. gap-filled
+
+## Install
+
+This project uses [uv](https://docs.astral.sh/uv/) to manage Python and its
+packages. [Install uv](https://docs.astral.sh/uv/getting-started/installation/),
+then:
+
+```bash
+git clone <this-repo-url>
+cd gi01sumo-mooring-tools
+uv sync
+```
+
+`uv sync` creates a `.venv` folder and installs the exact package versions
+recorded in `uv.lock`, plus `mooring_tools` itself. Nothing needs to be
+activated: put `uv run` in front of any command to run it in this
+environment.
+
+To work in a notebook:
+
+```bash
+uv run jupyter lab
+```
+
+## Usage
+
+```python
+import numpy as np
+import xarray as xr
+from mooring_tools.stats import resample_burst_stats
+
+ctd = xr.open_dataset("data/gi01sumo_nsif_ctd.nc")
+scalar_vars = [v for v in ctd.data_vars if ctd[v].dims == ("time",) and np.issubdtype(ctd[v].dtype, np.number)]
+ctd_stats = resample_burst_stats(ctd[scalar_vars].to_dataframe())
+```
+
+See `notebooks/first_analysis.ipynb` for a full worked example.
+
+## Data
+
+The `data/` folder is not part of this repository because the files are
+too large. It should contain `gi01sumo_nsif_ctd.nc` and
+`gi01sumo_nsif_dosta.nc`, a full deployment of real OOI GI01SUMO data. Get
+them from the workshop's starter-files download (see the lesson's Getting
+Started page), or download similar data from the OOI Data Explorer.
+
+## License
+
+MIT — see `LICENSE`.
+````
+
+:::::::::::::::::::::::::::::::::
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+## Docstrings at the project level
+
+Block 1 introduced docstrings at the level of a single function, with
+`fill_harmonic_gaps` as the model. Now that there are three
+modules, it's worth revisiting any functions which we didn't finish/complete the docstrings for.
+
+Open `merge.py`. Compare its docstrings to `stats.py`'s:
+
+```python
+# merge.py, as it stands after Block 2
+def flag_and_flatten(stats, was_filled, keep_vars):
+    """Restrict to `keep_vars`, add a modeled_flag per variable, and flatten
+    the 2-level (variable, stat) columns into single flat names."""
+    ...
+```
+
+No type hints, no `Parameters`/`Returns` sections, only a one-line summary
+only. Meanwhile `stats.py`'s `fill_harmonic_gaps` has both. This is a common issue
+that crops up during development and exploration.
+
+::::::::::::::::::::::::::::::::::::: challenge
+
+## Challenge 2: Docstring and type-hint audit
+
+Go through `plotting.py` and `merge.py` and bring every function up to the
+same standard as `stats.py`: type hints on the signature, and a full
+NumPy-style docstring (summary, `Parameters`, `Returns`).
+
+:::::::::::::::::::::::: solution
+
+```python
+# merge.py, after the audit
+import pandas as pd
+import xarray as xr
+
+# Attributes that describe each variable
+VARIABLE_ATTRS = {
+    "sea_water_temperature": {"units": "degrees_Celsius", "long_name": "Sea Water Temperature"},
+    "sea_water_practical_salinity": {"units": "1", "long_name": "Sea Water Practical Salinity"},
+    "sea_water_pressure": {"units": "dbar", "long_name": "Sea Water Pressure"},
+    "oxygen_concentration_corrected": {"units": "umol kg-1", "long_name": "Corrected Dissolved Oxygen Concentration"},
+}
+
+# Attributes that describe the statistic that was computed
+STAT_ATTRS = {
+    "median": {"comment": "Median of each 15-minute burst of samples"},
+    "mad": {"comment": "Median absolute deviation of each 15-minute burst of samples"},
+}
+
+# Attributes of the modeled flag, which is not in the units of the variable
+FLAG_ATTRS = {"units": "1", "comment": "Indicates whether a value was observed (0) or modeled (1)"}
+
+
+def flag_and_flatten(stats: pd.DataFrame, was_filled: pd.DataFrame, keep_vars: list[str]) -> pd.DataFrame:
+    """Restrict to `keep_vars`, add a modeled_flag per variable, and flatten
+    the 2-level (variable, stat) columns into single flat names.
+
+    Parameters
+    ----------
+    stats : pandas.DataFrame
+        Output of `resample_burst_stats` (2-level column MultiIndex of
+        (variable, stat)).
+    was_filled : pandas.DataFrame
+        Boolean frame with one column per variable, True where that burst
+        was gap-filled rather than observed.
+    keep_vars : list[str]
+        Which variables (first-level column names) to keep.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Flat columns like "sea_water_temperature_median",
+        "sea_water_temperature_mad", "sea_water_temperature_modeled_flag".
+    """
+    stats = stats.loc[:, keep_vars].copy()
+    for var in keep_vars:
+        stats[(var, "modeled_flag")] = was_filled[var].astype(int)
+
+    stats.columns = ["_".join(col).strip() for col in stats.columns.values]
+    return stats
+
+
+def merge_ctd_dosta(ctd_flat: pd.DataFrame, dosta_flat: pd.DataFrame) -> xr.Dataset:
+    """Outer-merge flattened CTD and DOSTA tables and attach variable attributes.
+
+    Parameters
+    ----------
+    ctd_flat, dosta_flat : pandas.DataFrame
+        Output of `flag_and_flatten` for each instrument. Both must already
+        be flattened to single-level columns -- merging one flattened and
+        one still-MultiIndex table raises a `MergeError`.
+
+    Returns
+    -------
+    xarray.Dataset
+        Merged on the shared burst-median time index. Each data variable gets
+        the `units` and `long_name` listed for it in `VARIABLE_ATTRS`, plus a
+        comment describing the statistic. To support a new variable, add it to
+        `VARIABLE_ATTRS` and include it in the `keep_vars` passed to
+        `flag_and_flatten` -- no changes needed here.
+    """
+    merged = pd.merge(ctd_flat, dosta_flat, left_index=True, right_index=True, how="outer")
+    merged.index.name = "time"
+    ds = merged.to_xarray()
+
+    for var in ds.data_vars:
+        if var.endswith("_modeled_flag"):
+            ds[var].attrs.update(FLAG_ATTRS)
+            continue
+        for stat, stat_attrs in STAT_ATTRS.items():
+            if var.endswith(f"_{stat}"):
+                base_name = var[: -(len(stat) + 1)]
+                ds[var].attrs.update(VARIABLE_ATTRS.get(base_name, {}))
+                ds[var].attrs.update(stat_attrs)
+                break
+
+    return ds
+
+
+def save_merged_dataset(ds: xr.Dataset, path: str) -> None:
+    """Write a merged dataset to netCDF, with a couple of dataset-level attrs.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Typically the output of `merge_ctd_dosta`.
+    path : str
+        Output file path.
+    """
+    ds.attrs.setdefault("source", "OOI GI01SUMO near-surface instrument frame (CTD + DOSTA)")
+    ds.attrs.setdefault("processing", "15-minute burst median/MAD; gaps filled with linear trend + harmonic fit")
+    ds.to_netcdf(path)
+```
+
+:::::::::::::::::::::::::::::::::
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: instructor
+
+Worth naming explicitly: `merge_ctd_dosta`'s docstring now states the
+"add a new variable" extension path directly in its `Returns` section.
+This is documenting a design property Block 2's callout and this 
+block's reuse challenge both rely on. A good docstring doesn't just describe 
+current behavior; it tells the next person (including future-you) what's 
+safe to change without reading the implementation.
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+## Reusing and updating the repo
+
+The real test of a well-organized package is what happens when the
+scientific scope changes. Here's an example: add `sea_water_density` as a 
+variable to `data/gi01sumo_nsif_ctd.nc` results. `resample_burst_stats` has been computing burst statistics for it since Block 1, since it works generically over
+every numeric column. But `merge.py`'s `keep_vars` lists (in Block 2's
+Challenge 3, and `VARIABLE_ATTRS`) never included it, so it's never made it
+into the final dataset.
+
+::::::::::::::::::::::::::::::::::::: challenge
+
+## Challenge 3: Add `sea_water_density` to the dataset
+
+Add `sea_water_density` as a supported merged-output variable. You should
+not need to edit `resample_burst_stats`, `flag_and_flatten`, or
+`merge_ctd_dosta` at all.
+
+:::::::::::::::::::::::: solution
+
+```python
+from mooring_tools.merge import VARIABLE_ATTRS
+
+VARIABLE_ATTRS["sea_water_density"] = {"units": "kg m-3", "long_name": "Sea Water Density"}
+
+keep_vars = ["sea_water_temperature", "sea_water_practical_salinity",
+             "sea_water_pressure", "sea_water_density"]
+ctd_flat = flag_and_flatten(ctd_stats, was_filled_ctd, keep_vars)
+```
+
+`resample_burst_stats` already computed statistics for every numeric
+column in the input dataframe, including density, since it was never
+told to look for specific variable names. `flag_and_flatten` and
+`merge_ctd_dosta` are equally generic; they only needed `VARIABLE_ATTRS`
+extended and a longer `keep_vars` list at the call site. If this doesn't work 
+you may need to revisit the functions from Block 2.
+
+:::::::::::::::::::::::::::::::::
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+## Versioning changes
+
+As the package evolves, with new variables, bug fixes, new functions, etc., 
+here are how you should handle these changes:
+
+- **Bump the version** in `pyproject.toml` (`version = "0.1.0"` →
+  `"0.2.0"`) when you make a change someone else relying on the package
+  would care about. `uv version --bump minor`
+  edits the `version` line in `pyproject.toml` for you (use `patch` for
+  bug fixes, `major` for breaking changes); `uv version` on its own prints
+  the current version.
+- **Tag the commit in git** (`git tag v0.2.0`) so "the version I ran this
+  analysis with" is always recoverable later, even after further changes.
+
+Which number to bump follows a widely used convention called
+[semantic versioning](https://semver.org/): version numbers look like
+`MAJOR.MINOR.PATCH`.
+
+- **Patch** (`0.1.0` → `0.1.1`, `uv version --bump patch`): bug fixes that
+  don't change how anyone uses the package.
+- **Minor** (`0.1.0` → `0.2.0`, `uv version --bump minor`): new features
+  that don't break existing code, such as adding a new function or
+  supporting density.
+- **Major** (`0.2.0` → `1.0.0`, `uv version --bump major`): changes that can
+  break code that used the old version, such as renaming a function or
+  changing what it returns.
+
+Commit the changed `pyproject.toml` and `uv.lock` together with the tag, so
+the version number and the recorded environment never disagree.
+
+Picking the work back up months later is the same two commands a new user
+runs: `uv sync` to rebuild `.venv` from `uv.lock`, then `uv run jupyter lab`.
+
+## Wrap-up
+
+Across all four blocks: a repeated block became a function (Block 1), the
+function joined others in a package (Block 2), the package became
+installable with a managed environment (Block 3), and now it's documented
+well, and generic, to extend for new scientific questions
+without touching working code (Block 4).
+
+::::::::::::::::::::::::::::::::::::: keypoints
+
+- A README's job is to let someone else install and run the project without asking you
+- Docstring consistency matters more as a project grows past one file
+- A well-documented function's docstring tells the reader what's safe to extend, not just what the function currently does
+- Reusing a repo well means extending generic functions with new data/config, not copy-pasting or editing working code
+- Bumping a version number and tagging the commit is enough to keep "what did I run this with" answerable later
+
+::::::::::::::::::::::::::::::::::::::::::::::::

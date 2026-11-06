@@ -1,0 +1,74 @@
+---
+title: 'Instructor Notes'
+---
+
+## Overall timing
+
+Two four-hour sessions, each split into two two-hour blocks with a ~10-minute
+break roughly every 50-60 minutes within a block, plus a longer break between
+the two blocks of each session.
+
+| Session | Block | Episode file | Topic | Time |
+|---|---|---|---|---|
+| 1 | 1 | `01-writing-functions.md` | Writing Effective Functions | 2h |
+| 1 | 2 | `02-modules.md` | Organizing Functions into Modules | 2h |
+| 2 | 3 | `03-repo-environments.md` | Repository + Environments | 2h |
+| 2 | 4 | `04-documentation-reuse.md` | Documentation and Reuse | 2h |
+
+## Design notes
+
+- The whole workshop is built around two real datasets: CTD and DOSTA data
+  from the GI01SUMO (**G**lobal **I**rminger Sea Array **Su**rface **Mo**oring)
+  NSIF (**N**ear **S**urface **I**nstrument **F**rame), which is located at 12 m
+  depth at 59.935683°N, -39.471917°W. Each block builds
+  directly on the previous one. The functions from Block 1
+  become the module in Block 2, the module becomes the repo in Block 3, and
+  the repo gets documented and reused in Block 4. 
+- `first_analysis.ipynb`'s is intended as an example notebook of which many learners
+  may be familiar with. Its intended to contain (almost) all the logic that
+  learners may need and is the source from which learners will be pulling
+  much of the code that goes into the functions and modules. Overall, though, this is a notebook-first workshop throughout: no standalone
+  `.py` scripts are run from a terminal, with everything happenning in
+  `first_analysis.ipynb`, with functions moved out into `.py` modules that
+  the notebook then imports.
+- Docstrings are introduced early (Block 1, at the function level) and
+  revisited at the project level in Block 4. This is intentional. Flag the
+  callback for learners so it doesn't feel repetitive.
+- The workshop uses `uv` for Python, environments, and packages, replacing
+  `venv`, `pip`, and `conda`. Block 3's challenges assume learners have
+  installed `uv` and `git` per the setup page, and have run the "Check your
+  setup" command. The  The first run downloads several hundred megabytes 
+  (`xarray`/`netCDF4`/JupyterLab and their dependencies) so the downloads **MUST**
+  be run before the workshop. We will **NOT** take in-workshop time to 
+  troubleshoot installs.
+
+
+
+## Common sticking points
+
+- Clearly distinguish "module" vs "package" and the callout in Episode 2
+  explicitly which explicitly addresses this difference.
+- "`uv: command not found`" is the most common Block 3 derailment: uv was
+  installed but the learner's terminal was opened beforehand. Have them
+  close and reopen the terminal. A second common one is launching Jupyter
+  without `uv run`, so the notebook can't import `mooring_tools`; consider a
+  TA circulating during Challenges 2–3 specifically. There is no activation
+  step to troubleshoot.
+- `PATH` and environment activation issues during Block 3 may be an issue.
+- Episode 2's merge-module challenge (Challenge 3) reproduces two real bugs
+  from the source notebook: a `MergeError` from an un-flattened DOSTA
+  table, and a `ctd_ds`/`ds` typo. This is a good moment to make explicit:
+  writing `flag_and_flatten` as one function called identically for both
+  instruments makes the missing flatten step impossible to skip, whereas
+  it was easy to miss scrolling through a long notebook.
+- The `%load_ext autoreload` / `%autoreload 2` pattern in Episode 2 is
+  worth demonstrating live (edit a function in `stats.py`, re-run a
+  notebook cell, show the change take effect without restarting the
+  kernel). It's a detail that makes the notebook + module workflow feel natural.
+- Episode 4's density-integration challenge (Challenge 3) is verified to work
+  with zero edits to `resample_burst_stats`, `flag_and_flatten`, or
+  `merge_ctd_dosta`. The only changes should be to `VARIABLE_ATTRS` and 
+  the `keep_vars` list change.  If a learner's version requires editing a 
+  function body, that's a signal something drifted from what should have been
+  done earlier in the workshop.
+

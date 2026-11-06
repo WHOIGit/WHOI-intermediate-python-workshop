@@ -1,0 +1,60 @@
+---
+title: 'Reference'
+---
+
+## Glossary
+
+module
+: A single `.py` file containing Python definitions (functions, classes,
+  variables) that can be imported elsewhere.
+
+package
+: A directory of modules containing an `__init__.py` file, allowing related
+  modules to be imported as a unit (e.g. `import mypackage.analysis`).
+
+repository (repo)
+: A directory tracked by a version control system (git) that typically
+  contains source code, tests, documentation, and metadata about the project.
+
+virtual environment
+: An isolated Python installation with its own set of installed packages,
+  used to keep a project's dependencies separate from other projects. In a
+  uv project this lives in a `.venv` folder that uv creates and manages for
+  you.
+
+uv
+: A tool that manages Python versions, virtual environments, and project
+  dependencies. It replaces separate use of `venv`, `pip`, and `pip freeze`
+  in this workshop.
+
+lock file (`uv.lock`)
+: A file uv generates that records the exact version of every package your
+  project depends on, for every supported platform and Python version.
+  Committed to git so anyone can recreate the same environment.
+
+editable install
+: Installing a package so Python imports it directly from your source
+  folder instead of a copy. Edits to your code take effect immediately.
+  `uv sync` installs your own project this way.
+
+docstring
+: A string literal placed as the first statement in a function, class, or
+  module, used to document what it does; accessible via `help()` or `.__doc__`.
+
+README
+: The first file a person reading a repository is expected to open;
+  describes what the project does, how to install it, and how to use it.
+
+burst sampling
+: An instrument sampling pattern where readings are taken rapidly for a
+  short window (a "burst"), then the instrument goes idle until the next
+  scheduled burst. 
+
+MAD (median absolute deviation)
+: A robust measure of spread: the median of the absolute deviations from
+  the median. Less sensitive to outliers than standard deviation.
+
+CTD / DOSTA
+: Common OOI instrument classes. CTD measures conductivity, temperature,
+  and depth (from which salinity and density are derived). DOSTA measures
+  dissolved oxygen.
