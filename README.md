@@ -14,7 +14,7 @@ Irminger Sea Array (GI01SUMO) and a notebook-first workflow.
 | 2 | 4 | Documentation and reuse |
 
 The lesson website is built with [The Carpentries Workbench][workbench] and is
-published at <https://reedan88.github.io/WHOI-intermediate-python-workshop/>.
+published at <https://whoigit.github.io/WHOI-intermediate-python-workshop/>.
 
 ## For learners
 
