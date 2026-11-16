@@ -17,7 +17,7 @@ Two four-hour sessions for scientists and technicians, in person or online.
 
 ## Register
 
-[Register for the workshop](https://forms.gle/REPLACE-WITH-FORM-LINK)
+[Register for the workshop](https://forms.gle/zzdPeZ4Pq4cfTmru9)
 
 The form asks for your name, email, department, your Python and git experience,
 whether you will attend in person or online, whether you would like to be
